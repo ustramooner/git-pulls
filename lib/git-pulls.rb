@@ -209,6 +209,7 @@ Usage: git pulls update
       line << l(Date.parse(pull[:created_at].to_s).strftime("%m/%d"), 5)
       line << l(pull[:title], 35)
       line << l(head[:label], 50)
+      line << l(head[:sha], 40)
 
       puts line.join ' '
     end
