@@ -43,7 +43,7 @@ class GitPulls
 
   def help
     puts "No command: #{@command}"
-    puts "Try: update, list, show, merge, checkout, browse"
+    puts "Try: update, list, show, merge, checkout, browse, setstatus"
     puts "or call with '-h' for usage information"
   end
 
@@ -59,6 +59,7 @@ Usage: git pulls update
    or: git pulls browse <number>
    or: git pulls merge <number>
    or: git pulls checkout [--force]
+   or: git pulls setstatus <number or sha> <state(pending, success, failure, error)> [context [description [target_url]]]
     USAGE
   end
 
@@ -101,6 +102,23 @@ Usage: git pulls update
     else
       puts "No such number"
     end
+  end
+
+  def setstatus
+    sha = @args.shift
+    state = @args.shift
+
+    if pull = pull_num(sha)
+     head = pull[:head].to_hash
+     sha = head[:sha]
+     #puts "New sha: #{sha}"
+    end
+
+    options = {}
+    options['context'] = @args.shift
+    options['description'] = @args.shift
+    options['target_url'] = @args.shift
+    ret = Octokit.create_status("#{@user}/#{@repo}", sha, state, options)
   end
 
   def show
