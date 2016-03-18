@@ -57,7 +57,7 @@ Usage: git pulls update
    or: git pulls list [state] [--reverse]
    or: git pulls show <number> [--comments] [--full]
    or: git pulls browse <number>
-   or: git pulls merge <number>
+   or: git pulls merge <number> [--no-commit] [--log]
    or: git pulls checkout [--force]
    or: git pulls setstatus <number or sha> <state(pending, success, failure, error)> [context [description [target_url]]]
     USAGE
@@ -82,6 +82,9 @@ Usage: git pulls update
         if option == '--log'
           message += "\n\n---\n\nMerge Log:\n"
           puts cmd = "git merge --no-ff --log -m '#{message}' #{sha}"
+        elsif option == '--no-commit'
+          message += "\n\n---\n\nMerge with --no-commit option:\n"
+          puts cmd = "git merge --no-commit -m '#{message}' #{sha}"
         else
           puts cmd = "git merge --no-ff -m '#{message}' #{sha}"
         end
@@ -193,11 +196,11 @@ Usage: git pulls update
 
     puts state.capitalize + " Pull Requests for #{@user}/#{@repo}"
     pulls = state == 'open' ? get_open_pull_info : get_closed_pull_info
-    
+
     if (state == 'closed')
        pulls.sort! { |a, b| b[:closed_at] <=> a[:closed_at] }
     end
-    
+
     pulls.reverse! if option == '--reverse'
 
     pulls.each do |pull|
@@ -359,8 +362,8 @@ Usage: git pulls update
   end
 
   def cache_pull_info
-    response_o = Octokit.pull_requests("#{@user}/#{@repo}", 'open')
-    response_c = Octokit.pull_requests("#{@user}/#{@repo}", 'closed')
+    response_o = Octokit.pull_requests("#{@user}/#{@repo}", state: 'open')
+    response_c = Octokit.pull_requests("#{@user}/#{@repo}", state: 'closed')
     save_data({'open' => response_o, 'closed' => response_c}, PULLS_CACHE_FILE)
   end
 
@@ -377,8 +380,8 @@ Usage: git pulls update
   end
 
   def github_insteadof_matching(c, u)
-    first = c.collect {|k,v| [v, /url\.(.*github\.com.*)\.insteadof/.match(k)]}.
-              find {|v,m| v and u.index(v) and m != nil}
+    first = c.collect {|k,v| [v, /url\.(.*github\.com.*)\.insteadof/.match(k)]}
+             .find {|v,m| v and u.index(v) and m != nil}
 
     if first
       return first[0], first[1][1]
